@@ -10,8 +10,14 @@
 #	and gather the relevent data.
 
 ITERATIONS=100000000
-BYTESTOCOPY=102400
-BLOCKSIZE=1024
+BYTESTOCOPY1=102400
+BLOCKSIZE1=1024
+FORKS1=100
+FORKS2=1000
+FORKS3=10000
+PROGRAM1=tester.c
+PROGRAM1=rw.c
+PROGRAM1=mixed
 TIMEFORMAT="wall=%e user=%U system=%S CPU=%P i-switched=%c v-switched=%w"
 MAKE="make -s"
 
@@ -21,15 +27,113 @@ $MAKE
 
 echo Starting test runs...
 
-echo Calculating pi over $ITERATIONS iterations using SCHED_OTHER with 1 simultaneous process...
-/usr/bin/time -f "$TIMEFORMAT" ./pi-sched $ITERATIONS SCHED_OTHER > /dev/null
+### testing CPU bound ###
+echo
+echo TESTING CPU BOUND...
+#scalability small
+echo testing small scalability...
+echo Calculating pi over $ITERATIONS iterations using SCHED_OTHER with $FORKS1 simultaneous process...
+/usr/bin/time -f "$TIMEFORMAT" ./tester pi-sched.c $FORKS1 $ITERATIONS SCHED_OTHER > pi-sched-$FORKS1-SCHED_OTHER 
 
-echo Calculating pi over $ITERATIONS iterations using SCHED_FIFO with 1 simultaneous process...
-/usr/bin/time -f "$TIMEFORMAT" sudo ./pi-sched $ITERATIONS SCHED_FIFO > /dev/null
+echo Calculating pi over $ITERATIONS iterations using SCHED_FIFO with $FORKS1 simultaneous process...
+/usr/bin/time -f "$TIMEFORMAT" sudo ./tester pi-sched.c $FORKS1 $ITERATIONS SCHED_FIFO > pi-sched-$FORKS1-SCHED_FIFO
 
-echo Calculating pi over $ITERATIONS iterations using SCHED_RR with 1 simultaneous process...
-/usr/bin/time -f "$TIMEFORMAT" sudo ./pi-sched $ITERATIONS SCHED_RR > /dev/null
+echo Calculating pi over $ITERATIONS iterations using SCHED_RR with $FORKS1 simultaneous process...
+/usr/bin/time -f "$TIMEFORMAT" sudo ./tester pi-sched.c $FORKS1 $ITERATIONS SCHED_RR > pi-sched-$FORKS1-SCHED_RR
 
-echo Copying $BYTESTOCOPY bytes in blocks of $BLOCKSIZE from rwinput to rwoutput
-echo using SCHED_OTHER with 1 simultaneous process...
-/usr/bin/time -f "$TIMEFORMAT" ./rw $BYTESTOCOPY $BLOCKSIZE > /dev/null
+#scalability medium
+echo testing medium scalability...
+echo Calculating pi over $ITERATIONS iterations using SCHED_OTHER with $FORKS2 simultaneous process...
+/usr/bin/time -f "$TIMEFORMAT" ./tester pi-sched.c $FORKS2 $ITERATIONS SCHED_OTHER > pi-sched-$FORKS2-SCHED_OTHER
+
+echo Calculating pi over $ITERATIONS iterations using SCHED_FIFO with $FORKS2 simultaneous process...
+/usr/bin/time -f "$TIMEFORMAT" sudo ./tester pi-sched.c $FORKS2 $ITERATIONS SCHED_FIFO > pi-sched-$FORKS2-SCHED_FIFO
+
+echo Calculating pi over $ITERATIONS iterations using SCHED_RR with $FORKS2 simultaneous process...
+/usr/bin/time -f "$TIMEFORMAT" sudo ./tester pi-sched.c $FORKS2 $ITERATIONS SCHED_RR > pi-sched-$FORKS2-SCHED_RR
+
+#scalability large
+echo testing large scalability...
+echo Calculating pi over $ITERATIONS iterations using SCHED_OTHER with $FORKS3 simultaneous process...
+/usr/bin/time -f "$TIMEFORMAT" ./tester pi-sched.c $FORKS3 $ITERATIONS SCHED_OTHER > pi-sched-$FORKS3-SCHED_OTHER
+
+echo Calculating pi over $ITERATIONS iterations using SCHED_FIFO with $FORKS3 simultaneous process...
+/usr/bin/time -f "$TIMEFORMAT" sudo ./tester pi-sched.c $FORKS3 $ITERATIONS SCHED_FIFO > pi-sched-$FORKS3-SCHED_FIFO
+
+echo Calculating pi over $ITERATIONS iterations using SCHED_RR with $FORKS3 simultaneous process...
+/usr/bin/time -f "$TIMEFORMAT" sudo ./tester pi-sched.c $FORKS3 $ITERATIONS SCHED_RR > pi-sched-$FORKS3-SCHED_RR
+
+### testing IO bound ###
+echo 
+echo TESTING IO BOUND...
+#scalability small
+echo testing small scalability...
+echo Copying $BYTESTOCOPY bytes in blocks of $BLOCKSIZE from rwinput to rwoutput with $FORKS1 simultaneous processes and SCHED_OTHER
+/usr/bin/time -f "$TIMEFORMAT" sudo ./tester rw.c $FORKS1 $BYTESTOCOPY $BLOCKSIZE SCHED_FIFO > rw-$FORKS1-SCHED_OTHER
+
+echo Copying $BYTESTOCOPY bytes in blocks of $BLOCKSIZE from rwinput to rwoutput with $FORKS1 simultaneous processes and SCHED_FIFO
+/usr/bin/time -f "$TIMEFORMAT" sudo ./tester rw.c $FORKS1 $BYTESTOCOPY $BLOCKSIZE SCHED_FIFO > rw-$FORKS1-SCHED_FIFO
+
+echo Copying $BYTESTOCOPY bytes in blocks of $BLOCKSIZE from rwinput to rwoutput with $FORKS1 simultaneous processes and SCHED_RR
+/usr/bin/time -f "$TIMEFORMAT" sudo ./tester rw.c $FORKS1 $BYTESTOCOPY $BLOCKSIZE SCHED_RR > rw-$FORKS1-SCHED_RR
+
+#scalability medium
+echo testing medium scalability...
+echo Copying $BYTESTOCOPY bytes in blocks of $BLOCKSIZE from rwinput to rwoutput with $FORKS2 simultaneous processes and SCHED_OTHER
+/usr/bin/time -f "$TIMEFORMAT" ./tester rw.c $FORKS2 $BYTESTOCOPY $BLOCKSIZE SCHED_OTHER > rw-$FORKS2-SCHED_OTHER
+
+echo Copying $BYTESTOCOPY bytes in blocks of $BLOCKSIZE from rwinput to rwoutput with $FORKS2 simultaneous processes and SCHED_FIFO
+/usr/bin/time -f "$TIMEFORMAT" sudo ./tester rw.c $FORKS2 $BYTESTOCOPY $BLOCKSIZE SCHED_FIFO > rw-$FORKS2-SCHED_FIFO
+
+echo Copying $BYTESTOCOPY bytes in blocks of $BLOCKSIZE from rwinput to rwoutput with $FORKS2 simultaneous processes and SCHED_RR
+/usr/bin/time -f "$TIMEFORMAT" sudo ./tester rw.c $FORKS2 $BYTESTOCOPY $BLOCKSIZE SCHED_RR > rw-$FORKS2-SCHED_RR
+
+#scalability large
+echo testing large scalability...
+echo Copying $BYTESTOCOPY bytes in blocks of $BLOCKSIZE from rwinput to rwoutput with $FORKS3 simultaneous processes and SCHED_OTHER
+/usr/bin/time -f "$TIMEFORMAT" ./tester rw.c $FORKS3 $BYTESTOCOPY $BLOCKSIZE SCHED_OTHER > rw-$FORKS3-SCHED_OTHER
+
+echo Copying $BYTESTOCOPY bytes in blocks of $BLOCKSIZE from rwinput to rwoutput with $FORKS3 simultaneous processes and SCHED_FIFO
+/usr/bin/time -f "$TIMEFORMAT" sudo ./tester rw.c $FORKS3 $BYTESTOCOPY $BLOCKSIZE SCHED_FIFO > rw-$FORKS3-SCHED_FIFO
+
+echo Copying $BYTESTOCOPY bytes in blocks of $BLOCKSIZE from rwinput to rwoutput with $FORKS3 simultaneous processes and SCHED_RR
+/usr/bin/time -f "$TIMEFORMAT" sudo ./tester rw.c $FORKS3 $BYTESTOCOPY $BLOCKSIZE SCHED_RR > rw-$FORKS3-SCHED_RR
+
+### testing mix ###
+echo 
+echo TESTING MIX...
+#scalability small
+echo testing small scalability...
+echo Copying $BYTESTOCOPY bytes in blocks of $BLOCKSIZE and calc pi with $ITERATIONS with $FORKS1 simultaneous processes and SCHED_OTHER
+/usr/bin/time -f "$TIMEFORMAT" sudo ./tester mixed $FORKS1 $ITERATIONS $BYTESTOCOPY $BLOCKSIZE SCHED_FIFO > mixed-$FORKS1-SCHED_OTHER
+
+echo Copying $BYTESTOCOPY bytes in blocks of $BLOCKSIZE and calc pi with $ITERATIONS with $FORKS1 simultaneous processes and SCHED_FIFO
+/usr/bin/time -f "$TIMEFORMAT" sudo ./tester mixed $FORKS1 $ITERATIONS $BYTESTOCOPY $BLOCKSIZE SCHED_FIFO > mixed-$FORKS1-SCHED_FIFO
+
+echo Copying $BYTESTOCOPY bytes in blocks of $BLOCKSIZE and calc pi with $ITERATIONS with $FORKS1 simultaneous processes and SCHED_RR
+/usr/bin/time -f "$TIMEFORMAT" sudo ./tester mixed $FORKS1 $ITERATIONS $BYTESTOCOPY $BLOCKSIZE SCHED_RR > mixed-$FORKS1-SCHED_RR
+
+#scalability medium
+echo testing medium scalability...
+echo Copying $BYTESTOCOPY bytes in blocks of $BLOCKSIZE and calc pi with $ITERATIONS with $FORKS2 simultaneous processes and SCHED_OTHER
+/usr/bin/time -f "$TIMEFORMAT" ./tester mixed $FORKS2 $ITERATIONS $BYTESTOCOPY $BLOCKSIZE SCHED_OTHER > mixed-$FORKS2-SCHED_OTHER
+
+echo Copying $BYTESTOCOPY bytes in blocks of $BLOCKSIZE and calc pi with $ITERATIONS with $FORKS2 simultaneous processes and SCHED_FIFO
+/usr/bin/time -f "$TIMEFORMAT" sudo ./tester mixed $FORKS2 $ITERATIONS $BYTESTOCOPY $BLOCKSIZE SCHED_FIFO > mixed-$FORKS2-SCHED_FIFO
+
+echo Copying $BYTESTOCOPY bytes in blocks of $BLOCKSIZE and calc pi with $ITERATIONS with $FORKS2 simultaneous processes and SCHED_RR
+/usr/bin/time -f "$TIMEFORMAT" sudo ./tester mixed $FORKS2 $ITERATIONS $BYTESTOCOPY $BLOCKSIZE SCHED_RR > mixed-$FORKS2-SCHED_RR
+
+#scalability large
+echo testing large scalability...
+echo Copying $BYTESTOCOPY bytes in blocks of $BLOCKSIZE and calc pi with $ITERATIONS with $FORKS3 simultaneous processes and SCHED_OTHER
+/usr/bin/time -f "$TIMEFORMAT" ./tester mixed $FORKS3 $ITERATIONS $BYTESTOCOPY $BLOCKSIZE SCHED_OTHER > mixed-$FORKS3-SCHED_OTHER
+
+echo Copying $BYTESTOCOPY bytes in blocks of $BLOCKSIZE and calc pi with $ITERATIONS with $FORKS3 simultaneous processes and SCHED_FIFO
+/usr/bin/time -f "$TIMEFORMAT" sudo ./tester mixed $FORKS3 $ITERATIONS $BYTESTOCOPY $BLOCKSIZE SCHED_FIFO > mixed-$FORKS3-SCHED_FIFO
+
+echo Copying $BYTESTOCOPY bytes in blocks of $BLOCKSIZE and calc pi with $ITERATIONS with $FORKS3 simultaneous processes and SCHED_RR
+/usr/bin/time -f "$TIMEFORMAT" sudo ./tester mixed $FORKS3 $ITERATIONS $BYTESTOCOPY $BLOCKSIZE SCHED_RR > mixed-$FORKS3-SCHED_RR
+
+echo
+echo FINISHED! :)
