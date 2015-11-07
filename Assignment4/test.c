@@ -6,19 +6,54 @@
 #include <sys/wait.h>
 
 int main(int argv, char **argc) {
-    if(argv != 4) return 0;
+    if(argv != 4){};
+    char* args[10];
     char* program = argc[1];
+    args[0] = program;
     long forks = atol(argc[2]);
-    char* iterations = argc[3];
-    char** args;
-    args[0] = iterations;
-    printf("%s forked %lu times each with %s\n",program,forks,iterations);
+    
+    if(!strcmp(program,"./pi-sched")) { // not mixed
+        char* iterations = argc[3];
+        char* sched = argc[4];
+        args[1] = iterations;
+        args[2] = sched;
+        args[3] = 0;
+    }
+    
+    if(!strcmp(program,"./rw")) { // not mixed
+        char* byes = argc[3];
+        char* blocks = argc[4];
+        char* sched = argc[5];
+        args[1] = byes;
+        args[2] = blocks;
+        args[3] = sched;
+        args[4] = 0;
+    }
+    args[0] = program;
 
     int status;
     int i  = 0;
-    for(i = 0; i < forks; i++) {
-        if(fork() == 0) {
-            int ret = execve(program, args, NULL); // run pi-sched with arguments
+
+    if(strcmp(program,"mixed")) { // not mixed
+        printf("%s forked %lu times",program,forks);
+        for(i = 0; i < forks; i++) {
+            if(fork() == 0) {
+                execve(program, &args[0], NULL); // run pi-sched with arguments
+            }
+        }
+    }
+    else { // mixed program
+        for(i = 0; i < forks/2; i++) {
+            if(fork() == 0) {
+                args[0] = "./pi-sched";
+                execve("./pi-sched", &args[0], NULL); // run pi-sched with arguments
+            }
+        }
+        for(i = 0; i < forks; i++) {
+            if(fork() == 0) {
+                args[0] = "./rw";
+                execve("./rw", &args[0], NULL); // run pi-sched with arguments
+            }
         }
     }
     int j = 0;
