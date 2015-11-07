@@ -1,0 +1,23 @@
+rw-2000-SCHED_RR wall=16.13 user=0.41 system=10.49 CPU=67% i-switched=11730 v-switched=719768
+pi-sched-2000-SCHED_RR wall=0.22 user=0.01 system=0.83 CPU=379% i-switched=1989 v-switched=2059
+pi-sched-20-SCHED_RR wall=0.01 user=0.00 system=0.01 CPU=160% i-switched=22 v-switched=32
+mixed-20-SCHED_OTHER wall=14.28 user=0.00 system=0.23 CPU=1% i-switched=477 v-switched=2083
+rw-20-SCHED_OTHER wall=1.06 user=0.00 system=0.15 CPU=14% i-switched=172 v-switched=6737
+rw-200-SCHED_FIFO wall=492.75 user=10.02 system=1789.95 CPU=365% i-switched=444297 v-switched=5395285
+mixed-20-SCHED_RR wall=14.86 user=0.00 system=0.25 CPU=1% i-switched=395 v-switched=2046
+rw-200-SCHED_OTHER wall=1.81 user=0.04 system=0.98 CPU=56% i-switched=1672 v-switched=65879
+mixed-20-SCHED_FIFO wall=13.78 user=0.00 system=0.21 CPU=1% i-switched=436 v-switched=1902
+rw-20-SCHED_FIFO wall=1.12 user=0.00 system=0.20 CPU=19% i-switched=347 v-switched=7124
+pi-sched-200-SCHED_OTHER wall=0.02 user=0.00 system=0.08 CPU=379% i-switched=197 v-switched=225
+pi-sched-200-SCHED_RR wall=0.03 user=0.00 system=0.07 CPU=266% i-switched=212 v-switched=260
+pi-sched-200-SCHED_FIFO wall=0.03 user=0.00 system=0.07 CPU=239% i-switched=208 v-switched=366
+rw-2000-SCHED_OTHER wall=14.12 user=0.39 system=9.96 CPU=73% i-switched=11838 v-switched=725309
+mixed-200-SCHED_FIFO ./testscript: 122: ./testscript: Cannot fork
+rw-2000-SCHED_FIFO wall=16.18 user=0.30 system=9.94 CPU=63% i-switched=13509 v-switched=728497
+pi-sched-2000-SCHED_OTHER wall=0.21 user=0.01 system=0.81 CPU=379% i-switched=2033 v-switched=2139
+pi-sched-20-SCHED_OTHER wall=0.00 user=0.00 system=0.01 CPU=333% i-switched=23 v-switched=32
+rw-20-SCHED_RR wall=1.12 user=0.01 system=0.18 CPU=18% i-switched=382 v-switched=6886
+rw-200-SCHED_RR wall=1.75 user=0.03 system=1.02 CPU=60% i-switched=1643 v-switched=59747
+mixed-200-SCHED_OTHER wall=225.56 user=0.02 system=3.87 CPU=1% i-switched=935 v-switched=45872
+pi-sched-20-SCHED_FIFO wall=0.01 user=0.00 system=0.01 CPU=126% i-switched=19 v-switched=46
+pi-sched-2000-SCHED_FIFO wall=0.22 user=0.01 system=0.83 CPU=383% i-switched=1983 v-switched=2065

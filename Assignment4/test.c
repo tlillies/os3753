@@ -76,7 +76,8 @@ int main(int argv, char **argc) {
     }
     int j = 0;
     for(j = 0; j < forks; j++) {
-        waitpid(0, &status, 0); // wait for the children
+        int ret = waitpid(0, &status, 0); // wait for the children
+        printf("%d: return: %d\n",j+1,ret);
     }
     return 0;
 }
