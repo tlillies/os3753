@@ -8,6 +8,7 @@
 int main(int argv, char **argc) {
     if(argv != 4){};
     char* args[10];
+    char* args2[10];
     char* program = argc[1];
     args[0] = program;
     long forks = atol(argc[2]);
@@ -21,13 +22,30 @@ int main(int argv, char **argc) {
     }
     
     if(!strcmp(program,"./rw")) { // not mixed
-        char* byes = argc[3];
+        char* bytes = argc[3];
         char* blocks = argc[4];
         char* sched = argc[5];
-        args[1] = byes;
+
+        args[1] = bytes;
         args[2] = blocks;
         args[3] = sched;
         args[4] = 0;
+        printf("%s, %s, %s", args[1],args[2],args[3]);
+    }
+
+    if(!strcmp(program,"mixed")) { // not mixed
+        char* iterations = argc[3];
+        char* bytes = argc[4];
+        char* blocks = argc[5];
+        char* sched = argc[6];
+        args[1] = iterations;
+        args[2] = sched;
+        args[3] = 0;
+
+        args2[1] = bytes;
+        args2[2] = blocks;
+        args2[3] = sched;
+        args2[4] = 0;
     }
     args[0] = program;
 
@@ -52,7 +70,7 @@ int main(int argv, char **argc) {
         for(i = 0; i < forks; i++) {
             if(fork() == 0) {
                 args[0] = "./rw";
-                execve("./rw", &args[0], NULL); // run pi-sched with arguments
+                execve("./rw", &args2[0], NULL); // run pi-sched with arguments
             }
         }
     }

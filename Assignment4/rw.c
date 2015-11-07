@@ -74,8 +74,14 @@ int main(int argc, char* argv[]){
 	    exit(EXIT_FAILURE);
 	}
     }
+
+	if(strnlen(DEFAULT_INPUTFILENAME, MAXFILENAMELENGTH) >= MAXFILENAMELENGTH){
+	    fprintf(stderr, "Default input filename too long\n");
+	    exit(EXIT_FAILURE);
+	}
+	strncpy(inputFilename, DEFAULT_INPUTFILENAME, MAXFILENAMELENGTH);
     /* Set supplied input filename or default if not supplied */
-    if(argc < 4){
+    /**if(argc < 4){
 	if(strnlen(DEFAULT_INPUTFILENAME, MAXFILENAMELENGTH) >= MAXFILENAMELENGTH){
 	    fprintf(stderr, "Default input filename too long\n");
 	    exit(EXIT_FAILURE);
@@ -88,15 +94,15 @@ int main(int argc, char* argv[]){
 	    exit(EXIT_FAILURE);
 	}
 	strncpy(inputFilename, argv[3], MAXFILENAMELENGTH);
-    }
+    }**/
     /* Set supplied output filename base or default if not supplied */
-    if(argc < 5){
+   // if(argc < 5){
 	if(strnlen(DEFAULT_OUTPUTFILENAMEBASE, MAXFILENAMELENGTH) >= MAXFILENAMELENGTH){
 	    fprintf(stderr, "Default output filename base too long\n");
 	    exit(EXIT_FAILURE);
 	}
 	strncpy(outputFilenameBase, DEFAULT_OUTPUTFILENAMEBASE, MAXFILENAMELENGTH);
-    }
+/**    }
     else{
 	if(strnlen(argv[4], MAXFILENAMELENGTH) >= MAXFILENAMELENGTH){
 	    fprintf(stderr, "Output filename base is too long\n");
@@ -104,7 +110,7 @@ int main(int argc, char* argv[]){
 	}
 	strncpy(outputFilenameBase, argv[4], MAXFILENAMELENGTH);
     }
-
+**/
     /* Confirm blocksize is multiple of and less than transfersize*/
     if(blocksize > transfersize){
 	fprintf(stderr, "blocksize can not exceed transfersize\n");
