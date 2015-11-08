@@ -81,20 +81,20 @@ int main(int argc, char* argv[]){
     }
     strncpy(inputFilename, DEFAULT_INPUTFILENAME, MAXFILENAMELENGTH);
     /* Set supplied input filename or default if not supplied */
-    /**if(argc < 4){
-      if(strnlen(DEFAULT_INPUTFILENAME, MAXFILENAMELENGTH) >= MAXFILENAMELENGTH){
-      fprintf(stderr, "Default input filename too long\n");
-      exit(EXIT_FAILURE);
-      }
-      strncpy(inputFilename, DEFAULT_INPUTFILENAME, MAXFILENAMELENGTH);
-      }
-      else{
-      if(strnlen(argv[3], MAXFILENAMELENGTH) >= MAXFILENAMELENGTH){
-      fprintf(stderr, "Input filename too long\n");
-      exit(EXIT_FAILURE);
-      }
-      strncpy(inputFilename, argv[3], MAXFILENAMELENGTH);
-      }**/
+    if(argc < 4){
+        if(strnlen(DEFAULT_INPUTFILENAME, MAXFILENAMELENGTH) >= MAXFILENAMELENGTH){
+            fprintf(stderr, "Default input filename too long\n");
+            exit(EXIT_FAILURE);
+        }
+        strncpy(inputFilename, DEFAULT_INPUTFILENAME, MAXFILENAMELENGTH);
+    }
+    else{
+        if(strnlen(argv[3], MAXFILENAMELENGTH) >= MAXFILENAMELENGTH){
+            fprintf(stderr, "Input filename too long\n");
+            exit(EXIT_FAILURE);
+        }
+        strncpy(inputFilename, argv[3], MAXFILENAMELENGTH);
+    }
     /* Set supplied output filename base or default if not supplied */
     if(argc < 5){
         if(strnlen(DEFAULT_OUTPUTFILENAMEBASE, MAXFILENAMELENGTH) >= MAXFILENAMELENGTH){

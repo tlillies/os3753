@@ -42,6 +42,7 @@ int main(int argv, char **argc) {
         args[2] = sched;
         args[3] = 0;
 
+        args2[0] = "./rw";
         args2[1] = bytes;
         args2[2] = blocks;
         args2[3] = sched;
@@ -49,35 +50,42 @@ int main(int argv, char **argc) {
     }
     args[0] = program;
 
-    int status;
+    pid_t pids[forks];
+
     int i  = 0;
 
     if(strcmp(program,"mixed")) { // not mixed
         printf("%s forked %lu times",program,forks);
         for(i = 0; i < forks; i++) {
-            if(fork() == 0) {
+            pids[i] = fork();
+            if(pids[i] == 0) {
                 execve(program, &args[0], NULL); // run pi-sched with arguments
+                //exit(0);
+                break;
             }
         }
     }
     else { // mixed program
-        for(i = 0; i < forks/2; i++) {
-            if(fork() == 0) {
-                args[0] = "./pi-sched";
-                execve("./pi-sched", &args[0], NULL); // run pi-sched with arguments
-            }
-        }
         for(i = 0; i < forks; i++) {
-            if(fork() == 0) {
-                args[0] = "./rw";
-                execve("./rw", &args2[0], NULL); // run pi-sched with arguments
+            pids[i] = fork();
+            if(pids[i] == 0) {
+                if(i % 2 == 0) {
+                    execve("./pi-sched", &args[0], NULL); // run pi-sched with arguments
+                    break;
+                } else {
+                    execve("./rw", &args2[0], NULL); // run pi-sched with arguments
+                    break;
+                }
             }
         }
     }
     int j = 0;
     for(j = 0; j < forks; j++) {
-        int ret = waitpid(0, &status, 0); // wait for the children
-        printf("%d: return: %d\n",j+1,ret);
+        int status;
+        //printf("%d\n",pids[j]);
+        waitpid(0, &status, 0); // wait for the children
+        if(WIFEXITED(status)) printf("EXITED OK!!\n");
+        else printf("DIDNT EXIT OK!!\n");
     }
     return 0;
 }
