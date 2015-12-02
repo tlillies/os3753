@@ -32,6 +32,9 @@ openssl-examples: $(OPENSSL_EXAMPLES)
 fusehello: fusehello.o
 	$(CC) $(LFLAGS) $^ -o $@ $(LLIBSFUSE)
 
+myfuse: myfuse.o
+	$(CC) $(LFLAGS) $^ -o $@ $(LLIBSFUSE)
+
 fusexmp: fusexmp.o
 	$(CC) $(LFLAGS) $^ -o $@ $(LLIBSFUSE)
 
@@ -42,6 +45,9 @@ aes-crypt-util: aes-crypt-util.o aes-crypt.o
 	$(CC) $(LFLAGS) $^ -o $@ $(LLIBSOPENSSL)
 
 fusehello.o: fusehello.c
+	$(CC) $(CFLAGS) $(CFLAGSFUSE) $<
+
+myfuse.o: myfuse.c
 	$(CC) $(CFLAGS) $(CFLAGSFUSE) $<
 
 fusexmp.o: fusexmp.c
