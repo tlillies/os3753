@@ -4,13 +4,15 @@
 
   Minor modifications and note by Andy Sayler (2012) <www.andysayler.com>
 
+  More modifications by Thomas Lillis
+
   Source: fuse-2.8.7.tar.gz examples directory
   http://sourceforge.net/projects/fuse/files/fuse-2.X/
 
   This program can be distributed under the terms of the GNU GPL.
   See the file COPYING.
 
-  gcc -Wall `pkg-config fuse --cflags` fusexmp.c -o fusexmp `pkg-config fuse --libs`
+  gcc -Wall `pkg-config fuse --cflags` efs.c -o efs `pkg-config fuse --libs`
 
   Note: This implementation is largely stateless and does not maintain
         open file handels between open and release calls (fi->fh).
@@ -46,9 +48,27 @@
 #include <sys/xattr.h>
 #endif
 
-static int xmp_getattr(const char *path, struct stat *stbuf)
+#define MAX_PATH 4096
+
+typedef struct {
+    char *root_dir;
+    char *key;
+} efs_options;
+
+static void efs_mkpath(char fpath[MAX_PATH], const char *path)
+{
+    efs_options *options = (efs_options *) (fuse_get_context()->private_data);
+    strcpy(fpath, options->root_dir);
+    strncat(fpath, path, MAX_PATH);
+}
+
+static int efs_getattr(const char *path, struct stat *stbuf)
 {
 	int res;
+    
+    char full_path[MAX_PATH];
+    efs_mkpath(full_path,path);
+    path = full_path;
 
 	res = lstat(path, stbuf);
 	if (res == -1)
@@ -57,9 +77,13 @@ static int xmp_getattr(const char *path, struct stat *stbuf)
 	return 0;
 }
 
-static int xmp_access(const char *path, int mask)
+static int efs_access(const char *path, int mask)
 {
 	int res;
+    
+    char full_path[MAX_PATH];
+    efs_mkpath(full_path,path);
+    path = full_path;
 
 	res = access(path, mask);
 	if (res == -1)
@@ -68,9 +92,13 @@ static int xmp_access(const char *path, int mask)
 	return 0;
 }
 
-static int xmp_readlink(const char *path, char *buf, size_t size)
+static int efs_readlink(const char *path, char *buf, size_t size)
 {
 	int res;
+    
+    char full_path[MAX_PATH];
+    efs_mkpath(full_path,path);
+    path = full_path;
 
 	res = readlink(path, buf, size - 1);
 	if (res == -1)
@@ -81,7 +109,7 @@ static int xmp_readlink(const char *path, char *buf, size_t size)
 }
 
 
-static int xmp_readdir(const char *path, void *buf, fuse_fill_dir_t filler,
+static int efs_readdir(const char *path, void *buf, fuse_fill_dir_t filler,
 		       off_t offset, struct fuse_file_info *fi)
 {
 	DIR *dp;
@@ -89,6 +117,10 @@ static int xmp_readdir(const char *path, void *buf, fuse_fill_dir_t filler,
 
 	(void) offset;
 	(void) fi;
+    
+    char full_path[MAX_PATH];
+    efs_mkpath(full_path,path);
+    path = full_path;
 
 	dp = opendir(path);
 	if (dp == NULL)
@@ -107,9 +139,13 @@ static int xmp_readdir(const char *path, void *buf, fuse_fill_dir_t filler,
 	return 0;
 }
 
-static int xmp_mknod(const char *path, mode_t mode, dev_t rdev)
+static int efs_mknod(const char *path, mode_t mode, dev_t rdev)
 {
 	int res;
+    
+    char full_path[MAX_PATH];
+    efs_mkpath(full_path,path);
+    path = full_path;
 
 	/* On Linux this could just be 'mknod(path, mode, rdev)' but this
 	   is more portable */
@@ -127,9 +163,13 @@ static int xmp_mknod(const char *path, mode_t mode, dev_t rdev)
 	return 0;
 }
 
-static int xmp_mkdir(const char *path, mode_t mode)
+static int efs_mkdir(const char *path, mode_t mode)
 {
 	int res;
+    
+    char full_path[MAX_PATH];
+    efs_mkpath(full_path,path);
+    path = full_path;
 
 	res = mkdir(path, mode);
 	if (res == -1)
@@ -138,9 +178,13 @@ static int xmp_mkdir(const char *path, mode_t mode)
 	return 0;
 }
 
-static int xmp_unlink(const char *path)
+static int efs_unlink(const char *path)
 {
 	int res;
+    
+    char full_path[MAX_PATH];
+    efs_mkpath(full_path,path);
+    path = full_path;
 
 	res = unlink(path);
 	if (res == -1)
@@ -149,9 +193,13 @@ static int xmp_unlink(const char *path)
 	return 0;
 }
 
-static int xmp_rmdir(const char *path)
+static int efs_rmdir(const char *path)
 {
 	int res;
+    
+    char full_path[MAX_PATH];
+    efs_mkpath(full_path,path);
+    path = full_path;
 
 	res = rmdir(path);
 	if (res == -1)
@@ -160,10 +208,10 @@ static int xmp_rmdir(const char *path)
 	return 0;
 }
 
-static int xmp_symlink(const char *from, const char *to)
+static int efs_symlink(const char *from, const char *to)
 {
 	int res;
-
+    
 	res = symlink(from, to);
 	if (res == -1)
 		return -errno;
@@ -171,10 +219,10 @@ static int xmp_symlink(const char *from, const char *to)
 	return 0;
 }
 
-static int xmp_rename(const char *from, const char *to)
+static int efs_rename(const char *from, const char *to)
 {
 	int res;
-
+    
 	res = rename(from, to);
 	if (res == -1)
 		return -errno;
@@ -182,7 +230,7 @@ static int xmp_rename(const char *from, const char *to)
 	return 0;
 }
 
-static int xmp_link(const char *from, const char *to)
+static int efs_link(const char *from, const char *to)
 {
 	int res;
 
@@ -193,9 +241,13 @@ static int xmp_link(const char *from, const char *to)
 	return 0;
 }
 
-static int xmp_chmod(const char *path, mode_t mode)
+static int efs_chmod(const char *path, mode_t mode)
 {
 	int res;
+    
+    char full_path[MAX_PATH];
+    efs_mkpath(full_path,path);
+    path = full_path;
 
 	res = chmod(path, mode);
 	if (res == -1)
@@ -204,9 +256,13 @@ static int xmp_chmod(const char *path, mode_t mode)
 	return 0;
 }
 
-static int xmp_chown(const char *path, uid_t uid, gid_t gid)
+static int efs_chown(const char *path, uid_t uid, gid_t gid)
 {
 	int res;
+    
+    char full_path[MAX_PATH];
+    efs_mkpath(full_path,path);
+    path = full_path;
 
 	res = lchown(path, uid, gid);
 	if (res == -1)
@@ -215,9 +271,13 @@ static int xmp_chown(const char *path, uid_t uid, gid_t gid)
 	return 0;
 }
 
-static int xmp_truncate(const char *path, off_t size)
+static int efs_truncate(const char *path, off_t size)
 {
 	int res;
+    
+    char full_path[MAX_PATH];
+    efs_mkpath(full_path,path);
+    path = full_path;
 
 	res = truncate(path, size);
 	if (res == -1)
@@ -226,10 +286,14 @@ static int xmp_truncate(const char *path, off_t size)
 	return 0;
 }
 
-static int xmp_utimens(const char *path, const struct timespec ts[2])
+static int efs_utimens(const char *path, const struct timespec ts[2])
 {
 	int res;
 	struct timeval tv[2];
+    
+    char full_path[MAX_PATH];
+    efs_mkpath(full_path,path);
+    path = full_path;
 
 	tv[0].tv_sec = ts[0].tv_sec;
 	tv[0].tv_usec = ts[0].tv_nsec / 1000;
@@ -243,9 +307,13 @@ static int xmp_utimens(const char *path, const struct timespec ts[2])
 	return 0;
 }
 
-static int xmp_open(const char *path, struct fuse_file_info *fi)
+static int efs_open(const char *path, struct fuse_file_info *fi)
 {
 	int res;
+    
+    char full_path[MAX_PATH];
+    efs_mkpath(full_path,path);
+    path = full_path;
 
 	res = open(path, fi->flags);
 	if (res == -1)
@@ -255,11 +323,15 @@ static int xmp_open(const char *path, struct fuse_file_info *fi)
 	return 0;
 }
 
-static int xmp_read(const char *path, char *buf, size_t size, off_t offset,
+static int efs_read(const char *path, char *buf, size_t size, off_t offset,
 		    struct fuse_file_info *fi)
 {
 	int fd;
 	int res;
+    
+    char full_path[MAX_PATH];
+    efs_mkpath(full_path,path);
+    path = full_path;
 
 	(void) fi;
 	fd = open(path, O_RDONLY);
@@ -274,11 +346,15 @@ static int xmp_read(const char *path, char *buf, size_t size, off_t offset,
 	return res;
 }
 
-static int xmp_write(const char *path, const char *buf, size_t size,
+static int efs_write(const char *path, const char *buf, size_t size,
 		     off_t offset, struct fuse_file_info *fi)
 {
 	int fd;
 	int res;
+    
+    char full_path[MAX_PATH];
+    efs_mkpath(full_path,path);
+    path = full_path;
 
 	(void) fi;
 	fd = open(path, O_WRONLY);
@@ -293,9 +369,13 @@ static int xmp_write(const char *path, const char *buf, size_t size,
 	return res;
 }
 
-static int xmp_statfs(const char *path, struct statvfs *stbuf)
+static int efs_statfs(const char *path, struct statvfs *stbuf)
 {
 	int res;
+    
+    char full_path[MAX_PATH];
+    efs_mkpath(full_path,path);
+    path = full_path;
 
 	res = statvfs(path, stbuf);
 	if (res == -1)
@@ -304,9 +384,13 @@ static int xmp_statfs(const char *path, struct statvfs *stbuf)
 	return 0;
 }
 
-static int xmp_create(const char* path, mode_t mode, struct fuse_file_info* fi) {
+static int efs_create(const char* path, mode_t mode, struct fuse_file_info* fi) {
 
     (void) fi;
+    
+    char full_path[MAX_PATH];
+    efs_mkpath(full_path,path);
+    path = full_path;
 
     int res;
     res = creat(path, mode);
@@ -319,21 +403,29 @@ static int xmp_create(const char* path, mode_t mode, struct fuse_file_info* fi) 
 }
 
 
-static int xmp_release(const char *path, struct fuse_file_info *fi)
+static int efs_release(const char *path, struct fuse_file_info *fi)
 {
 	/* Just a stub.	 This method is optional and can safely be left
 	   unimplemented */
+    
+    char full_path[MAX_PATH];
+    efs_mkpath(full_path,path);
+    path = full_path;
 
 	(void) path;
 	(void) fi;
 	return 0;
 }
 
-static int xmp_fsync(const char *path, int isdatasync,
+static int efs_fsync(const char *path, int isdatasync,
 		     struct fuse_file_info *fi)
 {
 	/* Just a stub.	 This method is optional and can safely be left
 	   unimplemented */
+    
+    char full_path[MAX_PATH];
+    efs_mkpath(full_path,path);
+    path = full_path;
 
 	(void) path;
 	(void) isdatasync;
@@ -342,34 +434,51 @@ static int xmp_fsync(const char *path, int isdatasync,
 }
 
 #ifdef HAVE_SETXATTR
-static int xmp_setxattr(const char *path, const char *name, const char *value,
+static int efs_setxattr(const char *path, const char *name, const char *value,
 			size_t size, int flags)
 {
+    
+    char full_path[MAX_PATH];
+    efs_mkpath(full_path,path);
+    path = full_path;
+
 	int res = lsetxattr(path, name, value, size, flags);
 	if (res == -1)
 		return -errno;
 	return 0;
 }
 
-static int xmp_getxattr(const char *path, const char *name, char *value,
+static int efs_getxattr(const char *path, const char *name, char *value,
 			size_t size)
-{
+{   
+    char full_path[MAX_PATH];
+    efs_mkpath(full_path,path);
+    path = full_path;
+
 	int res = lgetxattr(path, name, value, size);
 	if (res == -1)
 		return -errno;
 	return res;
 }
 
-static int xmp_listxattr(const char *path, char *list, size_t size)
-{
+static int efs_listxattr(const char *path, char *list, size_t size)
+{ 
+    char full_path[MAX_PATH];
+    efs_mkpath(full_path,path);
+    path = full_path;
+
 	int res = llistxattr(path, list, size);
 	if (res == -1)
 		return -errno;
 	return res;
 }
 
-static int xmp_removexattr(const char *path, const char *name)
-{
+static int efs_removexattr(const char *path, const char *name)
+{ 
+    char full_path[MAX_PATH];
+    efs_mkpath(full_path,path);
+    path = full_path;
+
 	int res = lremovexattr(path, name);
 	if (res == -1)
 		return -errno;
@@ -377,39 +486,39 @@ static int xmp_removexattr(const char *path, const char *name)
 }
 #endif /* HAVE_SETXATTR */
 
-static struct fuse_operations xmp_oper = {
-	.getattr	= xmp_getattr,
-	.access		= xmp_access,
-	.readlink	= xmp_readlink,
-	.readdir	= xmp_readdir,
-	.mknod		= xmp_mknod,
-	.mkdir		= xmp_mkdir,
-	.symlink	= xmp_symlink,
-	.unlink		= xmp_unlink,
-	.rmdir		= xmp_rmdir,
-	.rename		= xmp_rename,
-	.link		= xmp_link,
-	.chmod		= xmp_chmod,
-	.chown		= xmp_chown,
-	.truncate	= xmp_truncate,
-	.utimens	= xmp_utimens,
-	.open		= xmp_open,
-	.read		= xmp_read,
-	.write		= xmp_write,
-	.statfs		= xmp_statfs,
-	.create         = xmp_create,
-	.release	= xmp_release,
-	.fsync		= xmp_fsync,
+static struct fuse_operations efs_oper = {
+	.getattr	= efs_getattr,
+	.access		= efs_access,
+	.readlink	= efs_readlink,
+	.readdir	= efs_readdir,
+	.mknod		= efs_mknod,
+	.mkdir		= efs_mkdir,
+	.symlink	= efs_symlink,
+	.unlink		= efs_unlink,
+	.rmdir		= efs_rmdir,
+	.rename		= efs_rename,
+	.link		= efs_link,
+	.chmod		= efs_chmod,
+	.chown		= efs_chown,
+	.truncate	= efs_truncate,
+	.utimens	= efs_utimens,
+	.open		= efs_open,
+	.read		= efs_read,
+	.write		= efs_write,
+	.statfs		= efs_statfs,
+	.create         = efs_create,
+	.release	= efs_release,
+	.fsync		= efs_fsync,
 #ifdef HAVE_SETXATTR
-	.setxattr	= xmp_setxattr,
-	.getxattr	= xmp_getxattr,
-	.listxattr	= xmp_listxattr,
-	.removexattr	= xmp_removexattr,
+	.setxattr	= efs_setxattr,
+	.getxattr	= efs_getxattr,
+	.listxattr	= efs_listxattr,
+	.removexattr	= efs_removexattr,
 #endif
 };
 
 int main(int argc, char *argv[])
 {
 	umask(0);
-	return fuse_main(argc, argv, &xmp_oper, NULL);
+	return fuse_main(argc, argv, &efs_oper, NULL);
 }
