@@ -76,6 +76,7 @@ extern int do_crypt(FILE* in, FILE* out, int action, char* key_str){
 		{
 		    /* Error */
 		    EVP_CIPHER_CTX_cleanup(&ctx);
+	        fprintf(stderr, "error that idk!\n");
 		    return 0;
 		}
 	}
@@ -90,6 +91,7 @@ extern int do_crypt(FILE* in, FILE* out, int action, char* key_str){
 	if(writelen != outlen){
 	    /* Error */
 	    perror("fwrite error");
+	    fprintf(stderr, "fwrite error\n");
 	    EVP_CIPHER_CTX_cleanup(&ctx);
 	    return 0;
 	}
@@ -102,6 +104,7 @@ extern int do_crypt(FILE* in, FILE* out, int action, char* key_str){
 	    {
 		/* Error */
 		EVP_CIPHER_CTX_cleanup(&ctx);
+	    fprintf(stderr, "EVP_CipherFinal_ex() FAILURE!\n");
 		return 0;
 	    }
 	/* Write remainign cipher block + padding*/

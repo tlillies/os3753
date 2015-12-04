@@ -82,7 +82,6 @@ static int encfs_checkenc(char fpath[MAX_PATH])
 static int encfs_encrypt(char fpath[MAX_PATH])
 {
     fprintf(stderr, "HEY MADE IT TO ENCRYPTION!!! %s\n",fpath);
-    fprintf(stderr, "temp path: ???\n");
     int check = 0;
     check = encfs_checkenc(fpath);
     fprintf(stderr, "check: %d\n",check);
@@ -101,10 +100,9 @@ static int encfs_encrypt(char fpath[MAX_PATH])
         return EXIT_FAILURE;
     }
     strcpy(temp_path, fpath);
-    strcat(temp_path, ".tmp");
+    strcat(temp_path, ".tmpe");
     fprintf(stderr, "temp path: %s\n",temp_path);
     temp = fopen(temp_path, "wb+");
-    fprintf(stderr, "temp path: %s\n",temp_path);
     if(!temp){
         perror("outfile fopen error");
         return EXIT_FAILURE;
@@ -114,6 +112,7 @@ static int encfs_encrypt(char fpath[MAX_PATH])
         fprintf(stderr, "do_crypt failed\n");
         return -1;
     }
+    fprintf(stderr, "do_crypt() 1 completed\n");
     fclose(in);
 
     // Encrypt back to origonal file
@@ -127,17 +126,21 @@ static int encfs_encrypt(char fpath[MAX_PATH])
         fprintf(stderr, "do_crypt failed\n");
         return -1;
     }
+    fprintf(stderr, "do_crypt() 2 completed\n");
     fclose(out);
     fclose(temp);
 
     fprintf(stderr, "HEY MADE IT TO END OF ENCRYPTON!!! %s\n",fpath);
+    unlink(temp_path);
     return 0;
 }
 
 static int encfs_decrypt(char fpath[MAX_PATH])
 {
+    fprintf(stderr, "HEY MADE IT TO DECRYPTION!!! %s\n",fpath);
     int check = 0;
     check = encfs_checkenc(fpath);
+    fprintf(stderr, "check: %d\n",check);
     if(check != ENCRYPTED) return 0;
     encfs_options *options = (encfs_options *) (fuse_get_context()->private_data);
 
@@ -145,26 +148,35 @@ static int encfs_decrypt(char fpath[MAX_PATH])
     FILE* out;
     FILE* temp;
     char temp_path[MAX_PATH];
-
+    
+    char temp_buffer[100];
     // Copy to a temp file
     in = fopen(fpath, "rb");                                                                                            
     if(!in){
         perror("infile fopen error");
         return EXIT_FAILURE;
     }
+    fgets(temp_buffer, 100, in);
+    fprintf(stderr,"IN: %s\n",temp_buffer);
     strcpy(temp_path, fpath);
-    strcat(temp_path, ".tmp");
-    temp = fopen(fpath, "wb+");
+    strcat(temp_path, ".tmpd");
+    fprintf(stderr, "temp path: %s\n",temp_path);
+    temp = fopen(temp_path, "wb+");
     if(!temp){
         perror("outfile fopen error");
         return EXIT_FAILURE;
     }
+
+    fprintf(stderr, "key: %s\n",options->key);
     if(!do_crypt(in, temp, -1, options->key)) // actual copy
     {                                                                              
         fprintf(stderr, "do_crypt failed\n");
         return -1;
     }
+    fprintf(stderr, "do_crypt() 1 completed\n");
     fclose(in);
+    fgets(temp_buffer, 100, temp);
+    fprintf(stderr,"TEMP: %s\n",temp_buffer);
 
     // Decrypt back to origonal file
     out = fopen(fpath, "wb+");
@@ -173,12 +185,18 @@ static int encfs_decrypt(char fpath[MAX_PATH])
         return EXIT_FAILURE;
     }
 
+    fprintf(stderr, "key: %s\n",options->key);
     if(!do_crypt(temp, out, 0, options->key)){                                                                              
         fprintf(stderr, "do_crypt failed\n");
         return -1;
     }
+    fgets(temp_buffer, 100, out);
+    fprintf(stderr,"OUT: %s\n",temp_buffer);
+    fprintf(stderr, "do_crypt() 2 completed\n");
     fclose(out);
     fclose(temp);
+    //unlink(temp_path);
+    fprintf(stderr, "HEY MADE IT TO END OF DECRYPTION!!! %s\n",fpath);
     return 0;
 }
 
