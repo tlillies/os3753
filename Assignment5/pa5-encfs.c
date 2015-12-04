@@ -60,15 +60,18 @@ typedef struct {
     char *key;
     char *root_dir;
 } encfs_options;
-/**
+
 static int encfs_checkenc(char fpath[MAX_PATH])
 {
     char * buffer;
     size_t buffer_size = getxattr(fpath,ATTR_NAME,NULL,0);
+    fprintf(stderr, "buffer size: %zu\n",buffer_size);
     int res = 0;
     buffer = malloc(buffer_size+1);
     buffer_size = getxattr(fpath,ATTR_NAME,buffer,buffer_size);
     buffer[buffer_size] = 0;
+
+    fprintf(stderr, "buffer: %s\n",buffer);
     if(!strcmp(buffer,"true")){
         res = 1; 
     }    
@@ -78,32 +81,56 @@ static int encfs_checkenc(char fpath[MAX_PATH])
 
 static int encfs_encrypt(char fpath[MAX_PATH])
 {
+    fprintf(stderr, "HEY MADE IT TO ENCRYPTION!!! %s\n",fpath);
+    fprintf(stderr, "temp path: ???\n");
     int check = 0;
     check = encfs_checkenc(fpath);
+    fprintf(stderr, "check: %d\n",check);
     if(check != ENCRYPTED) return 0;
     encfs_options *options = (encfs_options *) (fuse_get_context()->private_data);
 
     FILE* in;
     FILE* out;
+    FILE* temp;
+    char temp_path[MAX_PATH];
+
+    // Copy to a temp file
     in = fopen(fpath, "rb");                                                                                            
     if(!in){
         perror("infile fopen error");
         return EXIT_FAILURE;
     }
+    strcpy(temp_path, fpath);
+    strcat(temp_path, ".tmp");
+    fprintf(stderr, "temp path: %s\n",temp_path);
+    temp = fopen(temp_path, "wb+");
+    fprintf(stderr, "temp path: %s\n",temp_path);
+    if(!temp){
+        perror("outfile fopen error");
+        return EXIT_FAILURE;
+    }
+    if(!do_crypt(in, temp, -1, options->key)) // actual copy
+    {                                                                              
+        fprintf(stderr, "do_crypt failed\n");
+        return -1;
+    }
+    fclose(in);
+
+    // Encrypt back to origonal file
     out = fopen(fpath, "wb+");
     if(!out){
         perror("outfile fopen error");
         return EXIT_FAILURE;
     }
 
-    if(!do_crypt(in, out, 0, options->key)){                                                                              
+    if(!do_crypt(temp, out, 1, options->key)){                                                                              
         fprintf(stderr, "do_crypt failed\n");
         return -1;
     }
-
-    fclose(in);
     fclose(out);
+    fclose(temp);
 
+    fprintf(stderr, "HEY MADE IT TO END OF ENCRYPTON!!! %s\n",fpath);
     return 0;
 }
 
@@ -113,30 +140,48 @@ static int encfs_decrypt(char fpath[MAX_PATH])
     check = encfs_checkenc(fpath);
     if(check != ENCRYPTED) return 0;
     encfs_options *options = (encfs_options *) (fuse_get_context()->private_data);
-    
+
     FILE* in;
     FILE* out;
+    FILE* temp;
+    char temp_path[MAX_PATH];
+
+    // Copy to a temp file
     in = fopen(fpath, "rb");                                                                                            
     if(!in){
         perror("infile fopen error");
         return EXIT_FAILURE;
     }
+    strcpy(temp_path, fpath);
+    strcat(temp_path, ".tmp");
+    temp = fopen(fpath, "wb+");
+    if(!temp){
+        perror("outfile fopen error");
+        return EXIT_FAILURE;
+    }
+    if(!do_crypt(in, temp, -1, options->key)) // actual copy
+    {                                                                              
+        fprintf(stderr, "do_crypt failed\n");
+        return -1;
+    }
+    fclose(in);
+
+    // Decrypt back to origonal file
     out = fopen(fpath, "wb+");
     if(!out){
         perror("outfile fopen error");
         return EXIT_FAILURE;
     }
 
-    if(!do_crypt(in, out, 0, options->key)){                                                                              
+    if(!do_crypt(temp, out, 0, options->key)){                                                                              
         fprintf(stderr, "do_crypt failed\n");
         return -1;
     }
-
-    fclose(in);
     fclose(out);
+    fclose(temp);
     return 0;
 }
-**/
+
 static void encfs_mkpath(char fpath[MAX_PATH], const char *path)
 {
     encfs_options *options = (encfs_options *) (fuse_get_context()->private_data);
@@ -412,12 +457,12 @@ static int encfs_read(const char *path, char *buf, size_t size, off_t offset,
 {
     int fd;
     int res;
-    int enc;
+    //int enc;
     char full_path[MAX_PATH];
     encfs_mkpath(full_path,path);
     path = full_path;
 
-    //enc = encfs_decrypt(full_path);
+    encfs_decrypt(full_path);
 
     (void) fi;
     fd = open(path, O_RDONLY);
@@ -431,7 +476,8 @@ static int encfs_read(const char *path, char *buf, size_t size, off_t offset,
     close(fd);
 
     //if(enc == ENCRYPTED) {
-    //    return encfs_encrypt(full_path);
+        //return 
+    encfs_encrypt(full_path);
     //}
 
     return res;
@@ -442,12 +488,12 @@ static int encfs_write(const char *path, const char *buf, size_t size,
 {
     int fd;
     int res;
-    int enc;
+    //int enc;
     char full_path[MAX_PATH];
     encfs_mkpath(full_path,path);
     path = full_path;
 
-   // enc = encfs_decrypt(full_path);
+    encfs_decrypt(full_path);
 
     (void) fi;
     fd = open(path, O_WRONLY);
@@ -461,7 +507,8 @@ static int encfs_write(const char *path, const char *buf, size_t size,
     close(fd);
 
     //if(enc == ENCRYPTED) {
- //       return encfs_encrypt(full_path);
+        //return 
+    encfs_encrypt(full_path);
     //}
 
     return res;
@@ -496,8 +543,8 @@ static int encfs_create(const char* path, mode_t mode, struct fuse_file_info* fi
         return -errno;
 
     close(res);
-    //encfs_encrypt(full_path);
-    //setxattr(full_path,ATTR_NAME,"true",4,0);
+    encfs_encrypt(full_path);
+    setxattr(full_path,ATTR_NAME,"true",4,0);
     return 0;
 }
 
